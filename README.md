@@ -1,5 +1,10 @@
 # Arcio Authentication
 
+## Credits
+
+ - [@JohnCosta27](https://github.com/JohnCosta27) For the majority of this authentication system
+ - [@Acorn221](https://github.com/Acorn221) For tests, the register endpoint and many bug fixes
+
 This repo is to setup the authentication for the arcio systems.
 
 [![ci](https://github.com/arcio-uk/auth-system/actions/workflows/main-merging.yml/badge.svg)](https://github.com/arcio-uk/auth-system/actions/workflows/main-merging.yml)
