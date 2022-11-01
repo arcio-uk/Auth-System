@@ -1,0 +1,12 @@
+node_modules/
+log/
+.env
+coverage/
+dist/
+log.txt
+general_log.txt
+error_log.txt
+auditFile.json
+*.pem
+coverage-summary.json
+directory_to_store_logs/

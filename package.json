@@ -1,0 +1,62 @@
+{
+  "name": "arcio-auth-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r tsconfig-paths/register dist/index.js",
+    "dev": "nodemon -r tsconfig-paths/register src/index.ts",
+    "test:run": "jest",
+    "test:coverage": "jest --coverage",
+    "make-badges": "jest && jest --coverage && istanbul-badges-readme",
+    "build": "tsc -p .",
+    "prisma:pull": " npx prisma db pull && npx prisma generate",
+    "postinstall": "husky install",
+    "test:stress": "ts-node src/stress_test.ts"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "@prisma/client": "^3.8.1",
+    "body-parser": "^1.19.1",
+    "cors": "^2.8.5",
+    "dotenv": "^11.0.0",
+    "express": "^4.17.2",
+    "js-sha512": "^0.8.0",
+    "winston": "^3.6.0",
+    "winston-daily-rotate-file": "^4.6.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^16.2.1",
+    "@commitlint/config-conventional": "^16.2.1",
+    "@supabase/supabase-js": "^1.29.1",
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.13",
+    "@types/jest": "^27.4.0",
+    "@types/jsonwebtoken": "^8.5.7",
+    "@types/node": "^17.0.8",
+    "@types/supertest": "^2.0.11",
+    "@typescript-eslint/eslint-plugin": "^5.12.1",
+    "@typescript-eslint/eslint-plugin-tslint": "^5.12.1",
+    "@typescript-eslint/parser": "^5.12.1",
+    "axios": "^0.26.1",
+    "husky": "^7.0.4",
+    "istanbul-badges-readme": "^1.8.1",
+    "jest": "^27.4.7",
+    "jsonwebtoken": "^8.5.1",
+    "nodemon": "^2.0.15",
+    "prisma": "^3.10.0",
+    "supertest": "^6.2.1",
+    "ts-jest": "^27.1.2",
+    "ts-node": "^10.4.0",
+    "tsconfig-paths": "^3.12.0",
+    "typescript": "^4.5.5",
+    "typescript-eslint": "^0.0.1-alpha.0"
+  },
+  "prisma": {
+    "schema": "./src/prisma/schema.prisma"
+  }
+}

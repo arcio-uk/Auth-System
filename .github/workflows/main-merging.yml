@@ -1,0 +1,46 @@
+# This action checks linting and tests the branch to make sure
+# it is good enough to be merged into main.
+
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ["*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v2
+      
+      - name: Setup .env file
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV }}
+        run: |
+          touch .env
+          echo "$DOT_ENV" > .env
+
+      - name: Generate public/private key pair
+        run: bash keygen.sh
+      
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Setup database
+        run: | 
+          npx prisma generate
+          npx prisma db push
+      
+      - name: Run tests
+        run: npm run make-badges
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/coverage-summary.json
+        

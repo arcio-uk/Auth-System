@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model actual_lessons {
+  id              String        @id @db.Uuid
+  group_lesson_id String        @db.Uuid
+  start_time      DateTime      @db.Timestamptz(6)
+  end_time        DateTime      @db.Timestamptz(6)
+  creation_time   DateTime      @default(now()) @db.Timestamptz(6)
+  edit_time       DateTime      @default(now()) @db.Timestamptz(6)
+  description     String        @db.VarChar(256)
+  location        String        @db.VarChar(256)
+  summary         String        @db.VarChar(256)
+  group_lessons   group_lessons @relation(fields: [group_lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  attendance      attendance[]
+
+  @@index([end_time], map: "al_et")
+  @@index([group_lesson_id], map: "al_gli")
+  @@index([start_time], map: "al_st")
+}
+
+model attendance {
+  id             String         @id @db.Uuid
+  lesson_id      String         @db.Uuid
+  user_id        String         @db.Uuid
+  attendance_key String         @default("/") @db.Char(2)
+  register_time  DateTime?      @default(now()) @db.Timestamptz(6)
+  edit_time      DateTime       @default(now()) @db.Timestamptz(6)
+  actual_lessons actual_lessons @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([lesson_id, user_id])
+  @@index([lesson_id], map: "a_li")
+  @@index([user_id], map: "a_ui")
+}
+
+model endpoint_audit_logs {
+  id         String               @id @db.Uuid
+  user_id    String               @db.Uuid
+  event_time DateTime             @default(now()) @db.Timestamptz(6)
+  method     String               @db.VarChar(7)
+  endpoint   String               @db.VarChar(256)
+  body       String?              @db.VarChar
+  ip_address Unsupported("cidr")?
+  users      users                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([event_time], map: "eau_et")
+  @@index([ip_address], map: "eau_ip")
+  @@index([user_id], map: "eau_ui")
+}
+
+model global_config {
+  id                  String @id @db.Uuid
+  org_name            String @db.VarChar(256)
+  org_icon            String @db.VarChar(256)
+  org_banner          String @db.VarChar(256)
+  org_support_email   String @db.VarChar(256)
+  org_primary_colour  Int
+  org_accent_colour_1 Int
+  org_accent_colour_2 Int
+  owner_id            String @db.Uuid
+  default_overrides   Int    @default(0)
+  users               users  @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model group_lessons {
+  id                  String              @id @db.Uuid
+  module_group_id     String              @db.Uuid
+  name                String              @db.VarChar(256)
+  creation_time       DateTime            @default(now()) @db.Timestamptz(6)
+  edit_time           DateTime            @default(now()) @db.Timestamptz(6)
+  attendance_required Boolean
+  description         String              @db.VarChar(256)
+  location            String              @db.VarChar(256)
+  summary             String              @db.VarChar(256)
+  module_groups       module_groups       @relation(fields: [module_group_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  actual_lessons      actual_lessons[]
+  repeating_lessons   repeating_lessons[]
+
+  @@unique([id, module_group_id])
+  @@index([module_group_id], map: "gl_mgi")
+}
+
+model module_groups {
+  id                 String               @id @db.Uuid
+  module_id          String               @db.Uuid
+  name               String               @db.VarChar(256)
+  creation_time      DateTime             @default(now()) @db.Timestamptz(6)
+  edit_time          DateTime             @default(now()) @db.Timestamptz(6)
+  default_overrides  Int                  @default(0)
+  modules            modules              @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  group_lessons      group_lessons[]
+  module_user_groups module_user_groups[]
+
+  @@unique([id, module_id])
+  @@index([module_id], map: "mg_mi")
+}
+
+model module_user_groups {
+  id                      String                    @id @db.Uuid
+  module_user_id          String                    @db.Uuid
+  module_group_id         String                    @db.Uuid
+  creation_time           DateTime                  @default(now()) @db.Timestamptz(6)
+  edit_time               DateTime                  @default(now()) @db.Timestamptz(6)
+  module_groups           module_groups             @relation(fields: [module_group_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  module_users            module_users              @relation(fields: [module_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  module_group_user_roles module_group_user_roles[]
+
+  @@unique([module_user_id, module_group_id])
+  @@index([module_group_id], map: "mug_mgi")
+  @@index([module_user_id], map: "mug_mui")
+}
+
+model module_users {
+  id                 String               @id @db.Uuid
+  user_id            String               @db.Uuid
+  module_id          String               @db.Uuid
+  creation_time      DateTime             @default(now()) @db.Timestamptz(6)
+  edit_time          DateTime             @default(now()) @db.Timestamptz(6)
+  modules            modules              @relation(fields: [module_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  module_user_groups module_user_groups[]
+  module_user_roles  module_user_roles[]
+
+  @@unique([module_id, user_id])
+  @@index([module_id], map: "mu_mi")
+  @@index([user_id], map: "mu_ui")
+}
+
+model modules {
+  id                String          @id @db.Uuid
+  external_id       String?         @db.VarChar(20)
+  name              String          @db.VarChar(256)
+  creation_time     DateTime        @default(now()) @db.Timestamptz(6)
+  edit_time         DateTime        @default(now()) @db.Timestamptz(6)
+  default_overrides Int             @default(0)
+  module_groups     module_groups[]
+  module_users      module_users[]
+
+  @@index([external_id], map: "m_ei")
+}
+
+model repeating_lessons {
+  id                String        @id @db.Uuid
+  group_lesson_id   String        @db.Uuid
+  last_spawned_time DateTime?     @db.Timestamptz(6)
+  start_repeating   DateTime      @db.Date
+  stop_repeating    DateTime      @db.Date
+  start_time        DateTime      @db.Time(6)
+  end_time          DateTime      @db.Time(6)
+  repeat_every      DateTime      @db.Timestamptz(6)
+  creation_time     DateTime      @default(now()) @db.Timestamptz(6)
+  edit_time         DateTime      @default(now()) @db.Timestamptz(6)
+  group_lessons     group_lessons @relation(fields: [group_lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([stop_repeating], map: "rl_ert")
+  @@index([end_time], map: "rl_et")
+  @@index([group_lesson_id], map: "rl_gli")
+  @@index([start_repeating], map: "rl_srt")
+  @@index([start_time], map: "rl_st")
+}
+
+model role_users {
+  role_id       String   @db.Uuid
+  user_id       String   @db.Uuid
+  creation_time DateTime @default(now()) @db.Timestamptz(6)
+  edit_time     DateTime @default(now()) @db.Timestamptz(6)
+  roles         roles    @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([role_id, user_id])
+  @@index([role_id], map: "gru_ri")
+  @@index([user_id], map: "gru_ui")
+}
+
+model roles {
+  id                      String                    @id @db.Uuid
+  name                    String                    @db.VarChar(256)
+  overrides               Int                       @default(0)
+  creation_time           DateTime                  @default(now()) @db.Timestamptz(6)
+  edit_time               DateTime                  @default(now()) @db.Timestamptz(6)
+  attendance_user_roles   attendance_user_roles[]
+  module_group_user_roles module_group_user_roles[]
+  module_user_roles       module_user_roles[]
+  role_users              role_users[]
+}
+
+model users {
+  id                    String                  @id @db.Uuid
+  external_id           String?                 @db.VarChar(256)
+  firstname             String                  @db.VarChar(256)
+  surname               String                  @db.VarChar(256)
+  pronouns              String?                 @db.VarChar(10)
+  email                 String                  @unique @db.VarChar(256)
+  profile_picture       String?                 @db.VarChar(256)
+  password              String                  @db.VarChar(512)
+  salt                  String                  @db.VarChar(512)
+  creation_time         DateTime                @default(now()) @db.Timestamptz(6)
+  edit_time             DateTime                @default(now()) @db.Timestamptz(6)
+  active                Boolean                 @default(true)
+  attendance            attendance[]
+  attendance_user_roles attendance_user_roles[]
+  endpoint_audit_logs   endpoint_audit_logs[]
+  global_config         global_config[]
+  module_users          module_users[]
+  role_users            role_users[]
+
+  @@index([email], map: "u_e")
+  @@index([external_id], map: "u_ei")
+  @@index([firstname], map: "u_fn")
+  @@index([surname], map: "u_sn")
+}
+
+model attendance_user_roles {
+  role_id       String   @db.Uuid
+  user_id       String   @db.Uuid
+  creation_time DateTime @default(now()) @db.Timestamptz(6)
+  edit_time     DateTime @default(now()) @db.Timestamptz(6)
+  roles         roles    @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, user_id])
+}
+
+model module_group_user_roles {
+  role_id               String             @db.Uuid
+  module_user_groups_id String             @db.Uuid
+  creation_time         DateTime           @default(now()) @db.Timestamptz(6)
+  edit_time             DateTime           @default(now()) @db.Timestamptz(6)
+  module_user_groups    module_user_groups @relation(fields: [module_user_groups_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles                 roles              @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, module_user_groups_id])
+}
+
+model module_user_roles {
+  role_id        String       @db.Uuid
+  module_user_id String       @db.Uuid
+  creation_time  DateTime     @default(now()) @db.Timestamptz(6)
+  edit_time      DateTime     @default(now()) @db.Timestamptz(6)
+  module_users   module_users @relation(fields: [module_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles          roles        @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, module_user_id])
+}
